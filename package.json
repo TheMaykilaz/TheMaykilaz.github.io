@@ -1,18 +1,4 @@
 {
-  "name": "lab3",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
   },
-  "devDependencies": {
-    "prettier": "^3.3.1",
-    "vite": "^5.1.6"
-  },
-  "dependencies": {
-    "react-router-dom": "^7.5.0"
-  }
 }
