@@ -1,0 +1,37 @@
+{
+  "name": "lab3",
+  "version": "1.0.0",
+  "description": "Лабораторна робота 3",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "client": "react-scripts start",
+    "build": "react-scripts build",
+    "dev": "concurrently \"npm run start\" \"npm run client\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase": "^10.7.0",
+    "firebase-admin": "^13.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.5.3"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
