@@ -2,17 +2,77 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
+import { getUserBookings, addBooking, updateBooking, deleteBooking } from '../firebase';
+
 function Bookings() {
     const { user } = useAuth();
     const [bookings, setBookings] = useState([]);
+    const [newBooking, setNewBooking] = useState({ carName: '', startDate: '', endDate: '' });
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         if (user) {
-            const bookingsJSON = sessionStorage.getItem('userBookings');
-            const bookings = bookingsJSON ? JSON.parse(bookingsJSON) : [];
-            setBookings(bookings);
+            const fetchBookings = async () => {
+                try {
+                    const data = await getUserBookings(user.uid);
+                    setBookings(data);
+                } catch (err) {
+                    setError('Не вдалося завантажити бронювання');
+                    console.error(err);
+                }
+            };
+
+            fetchBookings();
         }
     }, [user]);
+
+    const handleAddBooking = async () => {
+        if (!newBooking.carName || !newBooking.startDate || !newBooking.endDate) {
+            setError('Будь ласка, заповніть усі поля');
+            return;
+        }
+
+        try {
+            const bookingData = {
+                ...newBooking,
+                userId: user.uid,
+            };
+            await addBooking(bookingData);
+            const updatedList = await getUserBookings(user.uid);
+            setBookings(updatedList);
+            setNewBooking({ carName: '', startDate: '', endDate: '' });
+            setError(null);
+        } catch (err) {
+            setError('Не вдалося додати бронювання');
+            console.error(err);
+        }
+    };
+
+    const handleDelete = async (index) => {
+        const bookingId = bookings[index].id;
+        try {
+            await deleteBooking(bookingId);
+            setBookings(bookings.filter((_, i) => i !== index));
+        } catch (err) {
+            setError('Не вдалося видалити бронювання');
+            console.error(err);
+        }
+    };
+
+    const handleDateChange = async (index, field, value) => {
+        const updatedBookings = [...bookings];
+        updatedBookings[index][field] = value;
+        setBookings(updatedBookings);
+
+        try {
+            await updateBooking(updatedBookings[index].id, {
+                [field]: value,
+            });
+        } catch (err) {
+            setError('Не вдалося оновити бронювання');
+            console.error(err);
+        }
+    };
 
     if (!user) {
         return (
@@ -28,29 +88,46 @@ function Bookings() {
         );
     }
 
-    const handleDelete = (index) => {
-        const updatedBookings = [...bookings];
-        updatedBookings.splice(index, 1);
-        setBookings(updatedBookings);
-        sessionStorage.setItem('userBookings', JSON.stringify(updatedBookings));
-    };
-
-    const handleDateChange = (index, field, value) => {
-        const updatedBookings = [...bookings];
-        updatedBookings[index][field] = value;
-        setBookings(updatedBookings);
-        sessionStorage.setItem('userBookings', JSON.stringify(updatedBookings));
-    };
-
     return (
         <section id="bookings">
             <h2>Мої бронювання</h2>
+
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+
+            <div className="booking-form">
+                <h3>Нове бронювання</h3>
+                <label>
+                    Назва авто:
+                    <input
+                        type="text"
+                        value={newBooking.carName}
+                        onChange={(e) => setNewBooking({ ...newBooking, carName: e.target.value })}
+                    />
+                </label>
+                <label>
+                    Дата початку:
+                    <input
+                        type="date"
+                        value={newBooking.startDate}
+                        onChange={(e) => setNewBooking({ ...newBooking, startDate: e.target.value })}
+                    />
+                </label>
+                <label>
+                    Дата закінчення:
+                    <input
+                        type="date"
+                        value={newBooking.endDate}
+                        onChange={(e) => setNewBooking({ ...newBooking, endDate: e.target.value })}
+                    />
+                </label>
+                <button onClick={handleAddBooking}>Забронювати</button>
+            </div>
+
             <div id="bookings-list">
                 {bookings.length > 0 ? (
                     bookings.map((booking, index) => (
-                        <div className="booking-item" key={index}>
+                        <div className="booking-item" key={booking.id}>
                             <h3>{booking.carName}</h3>
-
                             <label>
                                 Дата початку:
                                 <input
@@ -59,7 +136,6 @@ function Bookings() {
                                     onChange={(e) => handleDateChange(index, 'startDate', e.target.value)}
                                 />
                             </label>
-                            <br />
                             <label>
                                 Дата закінчення:
                                 <input
@@ -68,7 +144,6 @@ function Bookings() {
                                     onChange={(e) => handleDateChange(index, 'endDate', e.target.value)}
                                 />
                             </label>
-                            <br />
                             <button onClick={() => handleDelete(index)}>
                                 Видалити
                             </button>
@@ -81,30 +156,5 @@ function Bookings() {
         </section>
     );
 }
-
-const styles = {
-    bookingItem: {
-        border: '1px solid #ccc',
-        padding: '1rem',
-        borderRadius: '10px',
-        marginBottom: '10px',
-        backgroundColor: '#f9f9f9'
-    },
-    dateInput: {
-        margin: '0.5rem 0',
-        padding: '0.3rem',
-        borderRadius: '5px',
-        border: '1px solid #aaa'
-    },
-    deleteButton: {
-        marginTop: '0.5rem',
-        backgroundColor: '#c44',
-        color: 'white',
-        padding: '6px 10px',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer'
-    }
-};
 
 export default Bookings;
